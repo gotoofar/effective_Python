@@ -203,3 +203,68 @@ print(deserialize(data))
 通过元类来实现类的注册可以确保所有子类都不会遗漏。
 
 '''
+
+
+'''
+35.用元类来注解类的属性
+元类可以在某个类刚定义好但是尚未使用的时候提前修改或注解该类的属性
+
+栗子： 要定义新的类，用来表示客户数据库里的某一行，同时还希望在该类的相关属性
+与数据库表的每一列之间建立对应关系
+下面是操作符类
+'''
+class Field(object):
+    def __init__(self,name):
+        self.name=name
+        self.internal_name='_'+self.name
+
+    def __get__(self,instance,instance_type):
+        if instance is None:return self
+        return getattr(instance,self.internal_name,'')
+
+    def __set__(self, instance, value):
+        setattr(instance,self.internal_name,value)
+
+#表示数据行的类
+class Customer(object):
+    first_name = Field('first_name')
+    last_name = Field('last_name')
+    prefix = Field('prefix')
+    suffix = Field('suffix')
+
+foo=Customer()
+foo.first_name='Euclid'
+'''
+作者的意思是 first_name = Field('first_name') 这句话很重复
+里面的参数是'first_name'  字段名又是，因为Python解释的时候 Field('first_name') 没法知道自己应该赋值给谁
+可以用元类解决，为Field描述符自动设置其Field.name 和  Field.internal_name，不用将列的名称手动传给构造器
+
+'''
+class Meta(type):
+    def __new__(meta,name,bases,class_dict):
+        for key,value in class_dict.items():
+            if isinstance(value,Field):
+                value.name=key
+                value.internal_name='_'+key
+        cls = type.__new__(meta,name,bases,class_dict)
+        return cls
+
+#定义一个基类，Meta作为它的元类，代表数据库里一行的都要继承他
+class DatabaseRow(object,metaclass=Meta):
+    pass
+
+#之前的Field类，不需要再给它传入参数了，在元类里面已经设置好了
+class Field(object):
+    def __init__(self):
+        self.name=None
+        self.internal_name=None
+
+#代表数据库一行的子类，就可以像下面一样编写
+class BetterCustomer(DatabaseRow):
+    first_name=Field()
+    last_name=Field()
+    prefix=Field()
+    suffix=Field()
+
+foo = BetterCustomer()
+foo.first_name='Euler'
