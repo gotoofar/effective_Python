@@ -96,3 +96,30 @@ i=bisect_left(x,991234)   #二分查找数字的位置
 '''
 
 
+
+'''
+47.在重视精度的场合使用decimal
+
+
+'''
+from  decimal import Decimal
+
+rate=Decimal('1.45')
+seconds = Decimal('222')  #3分42秒
+cost = rate *seconds/Decimal('60')
+# 这时候小数点默认三位 5.365
+rounded = cost.quantize(Decimal('0.01'),rounding = ROUND_UP)  #设置小数点两位，向上取  5.37
+
+
+
+
+
+
+
+
+
+
+
+
+
+
